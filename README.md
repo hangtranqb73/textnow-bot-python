@@ -17,12 +17,15 @@ To use TextNow Bot in your project, add `textnow-bot` to your project's `require
 
 ### Usage
 
-An [example project](https://github.com/george-lim/textnow-bot-python/blob/master/examples/send_message) is provided to demonstrate how TextNow Bot can be used alongside Playwright to send a message.
+An [example project](https://github.com/george-lim/textnow-bot-python/blob/master/examples/send_message) is provided to demonstrate how TextNow Bot can be used to send a text message.
 
 Execute script on the command line:
 ```bash
 cd examples/send_message
 pip install -r requirements.txt
-python3 .
+python3 -m playwright install
+python3 . <recipient> <message> [<username> <password>]
+# Example:
+# python3 . XXX-XXX-XXXX "hello world!" user@domain.com ********
 ```
 <!-- [END getstarted] -->
