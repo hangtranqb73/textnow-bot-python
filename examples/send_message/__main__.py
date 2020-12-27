@@ -1,49 +1,50 @@
 import json
-import os
+import textnow_bot
+import pathlib
 import playwright
+import sys
 
-_COOKIES_FILE = 'cookies.json'
-_USERNAME = ''
-_PASSWORD = ''
-_RECIPIENT = ''
-_MESSAGE = ''
-
-from textnow_bot import TextNowBot
+_COOKIES_FILE_PATH = pathlib.Path('cookies.json')
+_SCREENSHOT_PATH = pathlib.Path('playwright_screenshot.png')
 
 with playwright.sync_playwright() as api:
-  browser = api.firefox.launch()
-  page = browser.newPage()
+  recipient = sys.argv[1]
+  message = sys.argv[2]
+  browser = None
+  page = None
 
   try:
-    if os.path.isfile(_COOKIES_FILE):
+    browser = api.chromium.launch()
+    page = browser.newPage()
+    bot = None
+
+    if len(sys.argv) == 5:
+      print('Logging in with account info...')
+      username = sys.argv[3]
+      password = sys.argv[4]
+      bot = textnow_bot.TextNowBot(page, username=username, password=password)
+    elif len(sys.argv) == 3:
       print('Logging in with existing cookies...')
-
-      with open(_COOKIES_FILE, 'r') as file:
-        cookies = json.load(file)
-        bot = TextNowBot(page, cookies)
+      cookies = json.loads(_COOKIES_FILE_PATH.read_text())
+      bot = textnow_bot.TextNowBot(page, cookies)
     else:
-      print('Logging in with account credentials...')
-
-      bot = TextNowBot(page)
-      cookies = bot.log_in(_USERNAME, _PASSWORD)
-
-    print('Successfully logged into TextNow!')
+      print(f'usage: {sys.argv[0]} <recipient> <message> [<username> <password>]')
+      raise Exception('missing parameters')
 
     print('Sending message...')
-    bot.send_message(_RECIPIENT, _MESSAGE)
-    print('Successfully sent message!')
+    bot.send_message(recipient, message)
+
+    print(f'Updating {_COOKIES_FILE_PATH}...')
+    cookies = bot.get_cookies()
+    _COOKIES_FILE_PATH.write_text(json.dumps(cookies))
 
     browser.close()
+    print('Successfully sent message on TextNow!')
   except:
     if page:
-      page.screenshot(path='./error-screenshot.png')
+      page.screenshot(path=_SCREENSHOT_PATH)
 
     if browser:
       browser.close()
 
     raise
-
-  print(f'Updating {_COOKIES_FILE}...')
-  with open(_COOKIES_FILE, 'w') as file:
-    json.dump(cookies, file)
-  print(f'Successfully updated {_COOKIES_FILE}!')
